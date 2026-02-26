@@ -8,7 +8,8 @@ Automated penetration testing reconnaissance suite for authorized security engag
 
 ## Credits
 
-- ProjectDiscovery (subfinder, dnsx, naabu, httpx, katana, nuclei, and more)
+- [ProjectDiscovery](https://projectdiscovery.io) (subfinder, dnsx, naabu, httpx, katana, nuclei, and more)
+- [Claude Code](https://claude.ai/claude-code) (Anthropic) — AI pair-programmer that wrote and refined this suite
 - The open-source tool authors who make this suite possible
 
 ## Features
