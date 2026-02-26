@@ -17,7 +17,7 @@ Automated penetration testing reconnaissance suite for authorized security engag
 - DNS enumeration and zone transfer checks (dnsx, dnsrecon, dig, nmap)
 - Port scanning (naabu, nmap, masscan)
 - HTTP probing and WAF detection (httpx, wafw00f)
-- Content/directory discovery (ffuf, gobuster, feroxbuster, dirsearch)
+- Content/directory discovery (feroxbuster)
 - URL discovery and web crawling (waybackurls, gau, katana, gospider, gf)
 - Vulnerability scanning (nuclei, nikto)
 - Secret and credential scanning (trufflehog, gitleaks)
@@ -70,7 +70,7 @@ All Go binaries and the Python virtual environment are installed into a `Rec0n-Z
 2. Sets up a Python 3 virtual environment at `Rec0n-Zer0-Tools/venv/`
 3. Installs pip tools (`dnsrecon`, `wafw00f`) into the venv
 4. Installs Go tools into `Rec0n-Zer0-Tools/go/bin/`
-5. Installs system packages (`nmap`, `ffuf`, `gobuster`, etc.) via `apt`
+5. Installs system packages (`nmap`, `feroxbuster`, etc.) via `apt`
 
 > **System-installed tools:** `trufflehog` and `gitleaks` are installed via `apt` (not built from Go source).
 
@@ -214,7 +214,7 @@ Profiles can be overridden per-tool from the **`T`** menu.
 ── Configuration ──────────────────────────────
  P  Set Profile        (Quick / Standard / Comprehensive)
  T  Configure Tools    (toggle individual tools on/off)
- W  Set Wordlist       (for ffuf / gobuster / feroxbuster)
+ W  Set Wordlist       (for feroxbuster)
  K  API Keys           (subfinder/findomain/gau)
  D  Install Dependencies  (go/pip3 auto-install)
  G  Generate Summary

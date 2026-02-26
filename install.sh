@@ -55,10 +55,7 @@ DEPS=(
   "httpx:go:github.com/projectdiscovery/httpx/cmd/httpx@latest"
   "wafw00f:pip:wafw00f"
   # Content Discovery
-  "ffuf:system:ffuf"
-  "gobuster:system:gobuster"
   "feroxbuster:system:feroxbuster"
-  "dirsearch:system:dirsearch"
   # URL Discovery
   "waybackurls:go:github.com/tomnomnom/waybackurls@latest"
   "gau:go:github.com/lc/gau/v2/cmd/gau@latest"
@@ -78,7 +75,7 @@ DEPS=(
 # System packages that can be removed during uninstall
 SYSTEM_PKGS=(
   amass findomain dnsutils nmap masscan
-  ffuf gobuster feroxbuster dirsearch nikto
+  feroxbuster nikto
   trufflehog
   gitleaks
 )
@@ -561,7 +558,7 @@ uninstall_tools() {
   warn "This will remove:"
   echo "  • $TOOLS_DIR  (Go binaries + Python venv)"
   echo ""
-  warn "System packages (amass, nmap, ffuf, etc.) will NOT be removed"
+  warn "System packages (amass, nmap, feroxbuster, etc.) will NOT be removed"
   warn "unless you answer Y to the optional prompt below."
   echo ""
   read -rp "$(echo -e "${BOLD}Remove $TOOLS_DIR? [y/N]: ${NC}")" confirm
@@ -631,7 +628,7 @@ usage() {
   echo -e "${BOLD}What gets installed:${NC}"
   echo "  Go tools   → $TOOLS_DIR/go/bin/"
   echo "  Pip tools  → $TOOLS_DIR/venv/bin/"
-  echo "  System pkg → via apt (nmap, ffuf, gobuster, amass, etc.)"
+  echo "  System pkg → via apt (nmap, feroxbuster, amass, etc.)"
   echo ""
   echo -e "${BOLD}Examples:${NC}"
   echo "  ./install.sh                # install everything"
@@ -707,7 +704,7 @@ main() {
   echo -e "  2. Create a Python3 virtual environment at ${CYAN}$RECON_VENV${NC}"
   echo -e "  3. Install pip tools (dnsrecon, wafw00f) into the venv"
   echo -e "  4. Install Go tools into ${CYAN}$TOOLS_DIR/go/bin${NC}"
-  echo -e "  5. Install system packages (nmap, ffuf, gobuster, etc.) via apt"
+  echo -e "  5. Install system packages (nmap, feroxbuster, etc.) via apt"
   if [ "$FORCE_INSTALL" -eq 1 ]; then
     echo -e "  6. Force reinstall even if tools are already present"
   fi

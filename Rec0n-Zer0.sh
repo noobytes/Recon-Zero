@@ -51,7 +51,7 @@ LOG_FILE=""
 WORDLIST="${WORDLIST:-}"
 CURRENT_PROFILE="standard"
 TOOL_TIMEOUT="${TOOL_TIMEOUT:-300}"   # seconds per tool; override: TOOL_TIMEOUT=600 ./Rec0n-Zer0.sh
-THREADS="${THREADS:-50}"              # concurrency for httpx/ffuf/gobuster etc; override: THREADS=100 ./Rec0n-Zer0.sh
+THREADS="${THREADS:-50}"              # concurrency for httpx/feroxbuster etc; override: THREADS=100 ./Rec0n-Zer0.sh
 LOCK_FILE=""                          # set dynamically in setup() — used to prevent duplicate runs
 SCAN_START=0                          # set in setup() — used to compute total elapsed time in summary
 RECON_VENV="$TOOLS_DIR/venv"   # Python venv — lives in Rec0n-Zer0-Tools/ next to the script
@@ -88,10 +88,7 @@ ENABLE_EMAIL_HARVEST=1
 ENABLE_CLOUD_ENUM=1
 
 # — Content Discovery —
-ENABLE_FFUF=1
-ENABLE_GOBUSTER=1
 ENABLE_FEROXBUSTER=1
-ENABLE_DIRSEARCH=0
 
 # — URL Discovery —
 ENABLE_WAYBACKURLS=1
@@ -159,10 +156,7 @@ DEPS=(
   "cloud_enum:system:cloud-enum"
   "s3scanner:pip:s3scanner"
   # Content Discovery
-  "ffuf:system:ffuf"
-  "gobuster:system:gobuster"
   "feroxbuster:system:feroxbuster"
-  "dirsearch:system:dirsearch"
   # URL Discovery
   "waybackurls:go:github.com/tomnomnom/waybackurls@latest"
   "gau:go:github.com/lc/gau/v2/cmd/gau@latest"
@@ -1128,7 +1122,7 @@ apply_profile() {
       ENABLE_HTTPX=1;      ENABLE_WAFW00F=0;  ENABLE_WHATWEB=0
       ENABLE_WHATWEB=0
       # Content
-      ENABLE_FFUF=1;       ENABLE_GOBUSTER=0;  ENABLE_FEROXBUSTER=0; ENABLE_DIRSEARCH=0
+      ENABLE_FEROXBUSTER=1
       # URLs
       ENABLE_WAYBACKURLS=1; ENABLE_GAU=0;      ENABLE_KATANA=0
       ENABLE_GOSPIDER=0;   ENABLE_GF=0
@@ -1152,7 +1146,7 @@ apply_profile() {
       ENABLE_HTTPX=1;      ENABLE_WAFW00F=1
       ENABLE_WHATWEB=1
       ENABLE_WHATWEB=1
-      ENABLE_FFUF=1;       ENABLE_GOBUSTER=1;  ENABLE_FEROXBUSTER=0; ENABLE_DIRSEARCH=0
+      ENABLE_FEROXBUSTER=1
       ENABLE_WAYBACKURLS=1; ENABLE_GAU=1;      ENABLE_KATANA=1
       ENABLE_GOSPIDER=0;   ENABLE_GF=1
       ENABLE_NUCLEI=1;     ENABLE_NIKTO=0
@@ -1171,7 +1165,7 @@ apply_profile() {
       ENABLE_HTTPX=1;      ENABLE_WAFW00F=1
       ENABLE_WHATWEB=1
       ENABLE_WHATWEB=1
-      ENABLE_FFUF=1;       ENABLE_GOBUSTER=1;  ENABLE_FEROXBUSTER=1; ENABLE_DIRSEARCH=1
+      ENABLE_FEROXBUSTER=1
       ENABLE_WAYBACKURLS=1; ENABLE_GAU=1;      ENABLE_KATANA=1
       ENABLE_GOSPIDER=1;   ENABLE_GF=1
       ENABLE_NUCLEI=1;     ENABLE_NIKTO=1
@@ -1213,10 +1207,7 @@ configure_tools() {
     "email harvesting:email_harvest"
     "cloud enumeration:cloud_enum"
     "── Content Discovery ──:HEADER"
-    "ffuf:ffuf"
-    "gobuster:gobuster"
     "feroxbuster:feroxbuster"
-    "dirsearch:dirsearch"
     "── URL Discovery ──:HEADER"
     "waybackurls:waybackurls"
     "gau:gau"
@@ -1722,41 +1713,12 @@ content_discovery() {
   local pids=()
   local tool_names=()
 
-  # ── Launch all content discovery tools in parallel ─────────────────────────
-  if use ffuf; then
-    echo "[$(date '+%H:%M:%S')] ffuf-dirs: ffuf -w $wl -u $target_url/FUZZ ..." >> "$LOG_FILE"
-    ffuf -w "$wl" -u "$target_url/FUZZ" \
-      -mc 200,201,204,301,302,307,401,403,405 -c -t "$THREADS" -ac \
-      -o "$out/ffuf_dirs.json" -of json >>"$LOG_FILE" 2>&1 &
-    pids+=($!); tool_names+=("ffuf-dirs")
-
-    echo "[$(date '+%H:%M:%S')] ffuf-files: ffuf -w $wl -u $target_url/FUZZ (ext) ..." >> "$LOG_FILE"
-    ffuf -w "$wl" -u "$target_url/FUZZ" \
-      -e .php,.html,.js,.txt,.bak,.zip,.env,.config,.yaml,.xml \
-      -mc 200,201,204,301,302,401 -c -t "$THREADS" -ac \
-      -o "$out/ffuf_files.json" -of json >>"$LOG_FILE" 2>&1 &
-    pids+=($!); tool_names+=("ffuf-files")
-  fi
-
-  if use gobuster; then
-    echo "[$(date '+%H:%M:%S')] gobuster: gobuster dir -u $target_url ..." >> "$LOG_FILE"
-    gobuster dir -u "$target_url" -w "$wl" -t "$THREADS" -q \
-      -o "$out/gobuster.txt" >>"$LOG_FILE" 2>&1 &
-    pids+=($!); tool_names+=("gobuster")
-  fi
-
+  # ── Launch feroxbuster ────────────────────────────────────────────────────
   if use feroxbuster; then
     echo "[$(date '+%H:%M:%S')] feroxbuster: feroxbuster -u $target_url ..." >> "$LOG_FILE"
     feroxbuster -u "$target_url" -w "$wl" -t "$THREADS" --depth 3 --quiet \
       -o "$out/feroxbuster.txt" >>"$LOG_FILE" 2>&1 &
     pids+=($!); tool_names+=("feroxbuster")
-  fi
-
-  if use dirsearch; then
-    echo "[$(date '+%H:%M:%S')] dirsearch: dirsearch -u $target_url ..." >> "$LOG_FILE"
-    dirsearch -u "$target_url" -w "$wl" -t "$THREADS" -q \
-      -o "$out/dirsearch.txt" >>"$LOG_FILE" 2>&1 &
-    pids+=($!); tool_names+=("dirsearch")
   fi
 
   # ── Single spinner while all content tools run ────────────────────────────
@@ -2347,7 +2309,7 @@ select_profile() {
   echo -e "               ~10–20 min on a typical scope"
   echo ""
   echo -e "  ${YELLOW}2${NC}  ${BOLD}Standard${NC}  ${GREEN}[✓]${NC}  Balanced — recommended for most engagements"
-  echo -e "               subfinder+amass, naabu+nmap, ffuf+gobuster, nuclei full, gowitness"
+  echo -e "               subfinder+amass, naabu+nmap, feroxbuster, nuclei full, gowitness"
   echo ""
   echo -e "  ${YELLOW}3${NC}  ${BOLD}Comprehensive${NC}  All tools enabled — maximum coverage, maximum time"
   echo -e "               Includes nikto, feroxbuster, gospider, aquatone, trufflehog..."
@@ -2637,7 +2599,7 @@ menu() {
     echo -e "  ${BOLD}── Configuration ──────────────────────────────${NC}"
     echo -e "   ${YELLOW}P${NC}  Set Profile        (Quick / Standard / Comprehensive)"
     echo -e "   ${YELLOW}T${NC}  Configure Tools    (toggle individual tools on/off)"
-    echo -e "   ${YELLOW}W${NC}  Set Wordlist       (for ffuf / gobuster / feroxbuster)"
+    echo -e "   ${YELLOW}W${NC}  Set Wordlist       (for feroxbuster)"
     echo -e "   ${YELLOW}K${NC}  API Keys           (subfinder/findomain/gau)"
     echo -e "   ${YELLOW}D${NC}  Install Dependencies  (run ./install.sh for auto-install)"
     echo -e "   ${YELLOW}G${NC}  Generate Summary"
